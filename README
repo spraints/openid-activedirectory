@@ -1,0 +1,5 @@
+PLAN:
+
+1. Run in IIS using IronRuby-Rack.
+2. Use NTLM to verify current user.
+3. http://openid.sep.com/maburke is my openid endpoint.
