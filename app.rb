@@ -1,9 +1,6 @@
 require 'rubygems'
-is_ironruby = defined?(RUBY_ENGINE) && (RUBY_ENGINE == 'ironruby')
-unless is_ironruby
-  require 'bundler'
-  Bundler.setup
-end
+require 'bundler'
+Bundler.setup
 require 'sinatra'
 
 get '/' do
