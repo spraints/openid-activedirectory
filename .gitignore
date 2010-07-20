@@ -1,2 +1,10 @@
 .bundle
 .*.swp
+public/bin/IronRuby.dll
+public/bin/IronRuby.Libraries.dll
+public/bin/IronRuby.Libraries.YAML.dll
+public/bin/Microsoft.Dynamic.dll
+public/bin/Microsoft.Scripting.dll
+public/bin/Microsoft.Scripting.Metadata.dll
+public/bin/ir.exe
+public/web.config
