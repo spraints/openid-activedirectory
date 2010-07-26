@@ -2,6 +2,8 @@ require 'rubygems'
 require 'bundler'
 Bundler.setup
 
+task :default => :aspnet
+
 desc 'Get the app ready to run under cover of ASP.NET'
 task :aspnet => %W(aspnet:copybin logdir aspnet:webconfig)
 
@@ -74,16 +76,12 @@ END_REDIRECT
 
   <system.web>
     <compilation debug="false" />
-    <httpModules>
-      <add name="IronRubyRack" type="IronRubyRack.AspNetModule, IronRuby.Rack" />
-    </httpModules>
   </system.web>
 
   <system.webServer>
-    <validation validateIntegratedModeConfiguration="false" />
-    <modules>
-      <add name="IronRubyRack" type="IronRubyRack.AspNetModule, IronRuby.Rack" />
-    </modules>
+    <handlers>
+      <add name="IronRuby-Rack" path="*" verb="*" type="IronRubyRack.AspNetHandlerFactory, IronRuby.Rack" preCondition="integratedMode" />
+    </handlers>
   </system.webServer>
 
   <appSettings>

@@ -7,7 +7,8 @@ require 'haml'
 
 helpers do
   def current_user
-    System::Web::HttpContext.current.user.identity.name
+    httpContextClass = System::AppDomain.current_domain.get_assemblies.select { |a| a.full_name =~ /^System.Web,/ }.first.get_type('System.Web.HttpContext').to_class
+    httpContextClass.current.user.identity.name.split('\\').last
   rescue
     nil
   end
