@@ -6,20 +6,15 @@ require "pathname"
 require "webrick"
 include WEBrick
 
-# load the openid library, first trying rubygems
-begin
-  require "openid"
-  require "openid/store/filestore"
-  require "openid/extensions/sreg"
-rescue LoadError
-  require "rubygems"
-  require_gem "ruby-openid"
-end
+require "rubygems"
+require 'openid'
+require 'openid/store/filesystem'
+require 'openid/extensions/sreg'
 
 ################ start config ##########################
 # use your desired store implementation here.
 store_dir = Pathname.new(Dir.tmpdir).join("openid-store")
-store = OpenID::FilesystemStore.new(store_dir)
+store = OpenID::Store::Filesystem.new(store_dir)
 
 $host = "localhost"
 $port = 2000
@@ -92,7 +87,7 @@ class SimpleServlet < HTTPServlet::AbstractServlet
     # Then ask the openid library to begin the authorization
     begin
       checkid_request = $consumer.begin(openid_identifier)
-    rescue OpenID::Yadis::DiscoveryFailure => why
+    rescue => why
       # If the URL was unusable (either because of network conditions,
       # a server error, or that the response returned was not an
       # OpenID identity page), the library will raise
