@@ -84,6 +84,14 @@ END_REDIRECT
     </handlers>
   </system.webServer>
 
+  <location path="login">
+    <system.web>
+      <authorization>
+        <deny users="?" />
+      </authorization>
+    </system.web>
+  </location>
+
   <appSettings>
     <add key="AppRoot" value=".." />
     <add key="Log" value="../log/ironruby-rack.log" />

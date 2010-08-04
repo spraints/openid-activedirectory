@@ -9,3 +9,12 @@
         Open ID Bridge
     #content
       =yield
+
+      -if current_user
+        %p
+          %a{:href => my_url}
+            &= current_user
+      -else
+        %p
+          %a{:href => '/login'}
+            Log in
