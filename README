@@ -1,5 +1,34 @@
-PLAN:
+A bridge between Active Directory and OpenID.
 
-1. Run in IIS using IronRuby-Rack.
-2. Use NTLM to verify current user.
-3. http://openid.sep.com/maburke is my openid endpoint.
+The idea is to have IIS perform Windows Authentication, and then let a ruby
+app do the OpenID dance.
+
+My goal is to get SSO with all the OpenID-enabled web apps that I want to
+install on our LAN. (e.g. gitorious, gerrit)
+
+
+Requirements
+============
+
+This is what i'm using. Other versions may work.
+
+IronRuby 1.1 for .NET 4.0
+Bundler 1.0.rc.3
+IIS 7
+Installation
+
+(ironruby) bundle install
+
+(ironruby) rake aspnet
+
+Create an IIS site that is rooted at public in this directory. Enable
+Anonymous and Windows authentication. Use the integrated pipeline, v4.0,
+32-bit .NET stuff.
+
+
+Try it out
+==========
+
+Visit http://youropenidhost/.
+This will redirect you to your identity page (assuming everything works).
+Copy the URL of this page into an OpenID login box.
