@@ -4,6 +4,8 @@ require 'bundler'
 Bundler.setup
 require 'sinatra'
 require 'haml'
+require 'sinatra/url_for'
+require 'openid'
 
 configure do
   enable :sessions
@@ -58,7 +60,36 @@ helpers do
   end
 
   def my_url
-    "/user/#{current_user.domain}/#{current_user.user}"
+    user_url current_user
+  end
+
+  def user_url user
+    "/user/#{user.domain}/#{user.user}"
+  end
+
+  def xrds_url user
+    user_url(user) + "/xrds"
+  end
+
+  def render_xrds *types
+    types = types.collect { |uri| "<Type>#{uri}</Type>" }.join("\n")
+    <<END_XRDS
+<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS
+    xmlns:xrds="xri://$xrds"
+    xmlns="xri://$xrd*($v*2.0)">
+  <XRD>
+    <Service priority="0">
+      #{types}
+      <URI>#{url_for '/server', :full}</URI>
+    </Service>
+  </XRD>
+</xrds:XRDS>
+END_XRDS
+  end
+
+  def user_xrds user
+    render_xrds OpenID::OPENID_2_0_TYPE, OpenID::OPENID_1_0_TYPE, OpenID::SREG_URI
   end
 end
 
@@ -77,7 +108,10 @@ end
 
 get '/user/:domain/:username' do
   @requested_user = ActiveDirectoryUser.new params[:domain], params[:username]
-  if @requested_user == current_user
+  if request.accept.include? 'application/xrds+xml'
+    content_type 'application/xrds+xml'
+    user_xrds @requested_user
+  elsif @requested_user == current_user
     haml :me
   else
     haml :not_me

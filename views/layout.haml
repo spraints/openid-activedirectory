@@ -3,6 +3,9 @@
   %head
     %title
       Open ID Bridge
+    -if @requested_user
+      %meta{'http-equiv' => 'X-XRDS-Location', 'content' => xrds_url(@requested_user)}
+      %link{:rel => 'openid.sever', :href => '/server'}
   %body
     #header
       %h1

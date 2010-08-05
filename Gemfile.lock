@@ -1,29 +1,21 @@
---- 
-hash: f65ee31a721aefd356dc360e0d6412a52a3f3d0e
-sources: []
-specs: 
-- haml: 
-    version: 3.0.13
-- rack: 
-    version: 1.2.0
-- ruby-openid: 
-    version: 2.1.8
-- sinatra: 
-    version: "1.0"
-dependencies: 
-  rack: 
-    version: = 1.2.0
-    group: 
-    - :default
-  sinatra: 
-    version: ">= 0"
-    group: 
-    - :default
-  haml: 
-    version: ">= 0"
-    group: 
-    - :default
-  ruby-openid: 
-    version: ">= 0"
-    group: 
-    - :default
+GEM
+  remote: http://rubygems.org/
+  specs:
+    emk-sinatra-url-for (0.2.1)
+      sinatra (>= 0.9.1.1)
+    haml (3.0.13)
+    rack (1.2.0)
+    ruby-openid (2.1.8)
+    sinatra (1.0)
+      rack (>= 1.0)
+
+PLATFORMS
+  ruby
+  x86-mswin32
+
+DEPENDENCIES
+  emk-sinatra-url-for
+  haml
+  rack (= 1.2.0)
+  ruby-openid
+  sinatra
