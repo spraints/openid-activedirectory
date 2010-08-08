@@ -1,0 +1,18 @@
+%form{:action => '/server/decide', :method => 'post'}
+  %p
+    Do you want to trust this site?
+
+  %p
+    Site:
+    &= @openid_request.trust_root
+
+  - if @openid_request.id_select
+    %p
+      You didn't supply an identity at the request end, so you're stuck.
+  - else
+    %p
+      Identity:
+      &= @openid_request.identity
+
+  %input{:type => 'submit', :name => 'yes', :value => 'yes'}
+  %input{:type => 'submit', :name => 'no',  :value => 'no' }

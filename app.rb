@@ -6,6 +6,7 @@ require 'sinatra'
 require 'haml'
 require 'sinatra/url_for'
 require 'openid'
+require 'openid/store/filesystem'
 
 configure do
   enable :sessions
@@ -34,6 +35,10 @@ class ActiveDirectoryUser
 end
 
 helpers do
+  def logged_in?
+    ! current_user.nil?
+  end
+
   def current_user
     current_user_from_session || current_user_from_aspnet
   end
@@ -91,6 +96,32 @@ END_XRDS
   def user_xrds user
     render_xrds OpenID::OPENID_2_0_TYPE, OpenID::OPENID_1_0_TYPE, OpenID::SREG_URI
   end
+
+  def server
+    @server ||= OpenID::Server::Server.new(OpenID::Store::Filesystem.new(File.expand_path(__FILE__ + '/../db')), '/server')
+  end
+
+  def authorized?(identity_url, trust_root)
+    return logged_in? && identity_url == my_url && approved?(trust_root)
+  end
+
+  def approved?(trust_root)
+    return session[:approvals].include? trust_root
+  end
+
+  def add_sreg request, response
+    sregreq = OpenID::SReg::Request.from_openid_request request
+    return if sregreq.nil?
+    raise 'TODO -- show real user info'
+  end
+
+  def add_pape request, response
+    papereq = OpenID::PAPE::Request.from_openid_request request
+    return if papereq.nil?
+    paperesp = OpenID::PAPE::Response.new
+    paperesp.nist_auth_level = 0 # we don't even do auth at all!
+    response.add_extension paperesp
+  end
 end
 
 get '/' do
@@ -115,5 +146,37 @@ get '/user/:domain/:username' do
     haml :me
   else
     haml :not_me
+  end
+end
+
+get '/server' do
+  @openid_request = server.decode_request(params)
+  unless @openid_request
+    return redirect '/'
+  end
+  if @openid_request.kind_of?(OpenID::Server::CheckIDRequest)
+    identity = @openid_request.identity
+    if @openid_request.id_select
+      if @openid_request.immediate
+        @openid_response = @openid_request.answer(false)
+      elsif logged_in?
+        identity = my_url
+      else
+        return haml :decision
+      end
+    end
+    if @openid_response
+      nil
+    elsif authorized?(identity, @openid_request.trust_root)
+      @openid_response = @openid_request.answer true, nil, identity
+      add_sreg @openid_request, openid_response
+      add_pape @openid_request, openid_response
+    elsif @openid_request.immediate
+      @openid_response = @openid_request.answer false, '/server'
+    else
+      return haml :decision
+    end
+  else
+    @openid_response = server.handle_request @openid_request
   end
 end
