@@ -7,6 +7,8 @@ require 'haml'
 require 'sinatra/url_for'
 require 'openid'
 require 'openid/store/filesystem'
+require 'openid/extensions/sreg'
+require 'openid/extensions/pape'
 
 configure do
   enable :sessions
@@ -77,7 +79,7 @@ helpers do
   end
 
   def user_url user
-    "/user/#{user.domain}/#{user.user}"
+    url_for("/user/#{user.domain}/#{user.user}", :full)
   end
 
   def xrds_url user
@@ -106,15 +108,36 @@ END_XRDS
   end
 
   def server
-    @server ||= OpenID::Server::Server.new(OpenID::Store::Filesystem.new(File.expand_path(__FILE__ + '/../db')), '/server')
+    @server ||= OpenID::Server::Server.new(OpenID::Store::Filesystem.new(File.expand_path(__FILE__ + '/../db/provider')), url_for('/server', :full))
   end
 
   def authorized?(identity_url, trust_root)
     return logged_in? && identity_url == my_url && approved?(trust_root)
   end
 
-  def approved?(trust_root)
-    return session[:approvals].include? trust_root
+  def approved? trust_root
+    return (session[:approvals] || []).include? trust_root
+  end
+
+  def approve trust_root
+    nil # todo
+  end
+
+  def render_openid_response
+    content_type :text
+    if @openid_response.needs_signing
+      signed_response = server.signatory.sign @openid_response
+    end
+    web_response = server.encode_response @openid_response
+    case web_response.code
+    when OpenID::Server::HTTP_OK
+      return web_response.body
+    when OpenID::Server::HTTP_REDIRECT
+      redirect web_response.headers['location']
+    else
+      status 400
+      return web_response.body
+    end
   end
 
   def add_sreg request, response
@@ -158,6 +181,14 @@ get '/user/:domain/:username' do
 end
 
 get '/server' do
+  be_server
+end
+post '/server' do
+  be_server
+end
+helpers do
+  def be_server
+
   @openid_request = server.decode_request(params)
   unless @openid_request
     return redirect '/'
@@ -170,6 +201,7 @@ get '/server' do
       elsif logged_in?
         identity = my_url
       else
+        session[:req] = @openid_request
         return haml :decision
       end
     end
@@ -180,11 +212,32 @@ get '/server' do
       add_sreg @openid_request, openid_response
       add_pape @openid_request, openid_response
     elsif @openid_request.immediate
-      @openid_response = @openid_request.answer false, '/server'
+      @openid_response = @openid_request.answer false, url_for('/server', :full)
     else
+      session[:req] = @openid_request
       return haml :decision
     end
   else
     @openid_response = server.handle_request @openid_request
   end
+  render_openid_response
+
+  end
+end
+
+post '/server/decide' do
+  @openid_request = session.delete :req
+  params[:yes] or
+    return redirect @openid_request.cancel_url
+  id_to_send = params[:id_to_send]
+  identity = @openid_request.identity
+  if @openid_request.id_select
+    content_type :text
+    return 'No, really, you are stuck. I am not going to authorize this request. Use your real account page.'
+  end
+  approve @openid_request.trust_root
+  @openid_response = @openid_request.answer true, nil, identity
+  add_sreg @openid_request, @openid_response
+  add_pape @openid_request, @openid_response
+  render_openid_response
 end

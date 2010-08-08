@@ -13,7 +13,7 @@ require 'openid/extensions/sreg'
 
 ################ start config ##########################
 # use your desired store implementation here.
-store_dir = Pathname.new(Dir.tmpdir).join("openid-store")
+store_dir = File.expand_path(__FILE__ + "/../../db/consumer")
 store = OpenID::Store::Filesystem.new(store_dir)
 
 $host = "localhost"
