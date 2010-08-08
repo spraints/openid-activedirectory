@@ -40,7 +40,7 @@ helpers do
   end
 
   def current_user
-    current_user_from_session || current_user_from_aspnet
+    current_user_from_session || current_user_from_aspnet || current_user_from_params
   end
 
   def login
@@ -62,6 +62,14 @@ helpers do
   rescue => e
     @error = e
     nil
+  end
+
+  def current_user_from_params
+    return nil unless
+      development?                   &&
+      (domain   = params[:domain]  ) &&
+      (username = params[:username])
+    ActiveDirectoryUser.new domain, username
   end
 
   def my_url
