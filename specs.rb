@@ -41,8 +41,7 @@ describe 'openid-activedirectory' do
       mock_aspnet.stub!(:identity).and_return(mock_aspnet)
       mock_aspnet.stub!(:name).and_return("DOMAIN\\USER")
 
-      @session = {}
-      get '/login', 'rack.session' => @session
+      get '/login'
     end
 
     it 'should login' do
@@ -60,21 +59,21 @@ describe 'openid-activedirectory' do
 
   context 'login page when aspnet has no user' do
     before do
-      @session = {}
-      get '/login', 'rack.session' => @session
+      get '/login'
     end
 
-    it 'should not login'
-    it 'should logout if previously logged in'
+    it 'should not login' do
+      last_request.session['current_user'].should be_nil
+    end
   end
 
   context 'openid requests' do
     context 'when logged in' do
-      it 'should handle user requests'
+      it 'should handle user requests (TODO: fill in)'
     end
     context 'when not logged in' do
-      it 'should handle server requests'
-      it 'should redirect the user to the login page with a return url'
+      it 'should handle server requests (TODO: fill in)'
+      it 'should redirect the user to the login page with a return url (TODO: fill in)'
     end
   end
 end
