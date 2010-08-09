@@ -5,6 +5,10 @@ GEM
       sinatra (>= 0.9.1.1)
     haml (3.0.13)
     rack (1.2.0)
+    rack-test (0.5.4)
+      rack (>= 1.0)
+    rake (0.8.7)
+    rspec (1.2.6)
     ruby-openid (2.1.8)
     sinatra (1.0)
       rack (>= 1.0)
@@ -17,5 +21,8 @@ DEPENDENCIES
   emk-sinatra-url-for
   haml
   rack (= 1.2.0)
+  rack-test
+  rake
+  rspec
   ruby-openid
   sinatra

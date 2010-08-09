@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler'
-Bundler.setup
+Bundler.setup :default, :rake
+require 'spec/rake/spectask'
 
 task :default => :aspnet
 
@@ -110,4 +111,10 @@ END_REDIRECT
 END_CONFIG
     end
   end
+end
+
+desc 'Run specs'
+Spec::Rake::SpecTask.new do |t|
+  t.spec_files = ['specs.rb']
+  t.spec_opts = ['-c']
 end
