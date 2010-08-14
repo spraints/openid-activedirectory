@@ -72,7 +72,21 @@ describe 'openid-activedirectory' do
       it 'should handle user requests (TODO: fill in)'
     end
     context 'when not logged in' do
-      it 'should handle server requests (TODO: fill in)'
+      context 'for the user page' do
+        before do
+          header 'Accept', 'text/html, application/xhtml+xml, application/xrds+xml'
+          get '/user/TESTDOMAIN/testuser'
+        end
+
+        it 'should return XRDS' do
+          last_response.headers['Content-type'].should == 'application/xrds+xml'
+        end
+
+        it 'should return server URI' do
+          last_response.body.should =~ %r{<URI>http://example.org/server</URI>}
+        end
+      end
+
       it 'should redirect the user to the login page with a return url (TODO: fill in)'
     end
   end
