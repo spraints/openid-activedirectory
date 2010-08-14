@@ -87,6 +87,27 @@ describe 'openid-activedirectory' do
         end
       end
 
+      it 'should handle initial server request' do
+        post '/server',
+          'openid.mode' => 'associate',
+          'openid.assoc_type' => 'HMAC-SHA1',
+          'openid.ns' => 'http://specs.openid.net/auth/2.0',
+          'openid.session_type' => 'DH-SHA1',
+          'openid.dh_consumer_public' => 'blah'
+        # This is a lame test, but it's all I've got for now.
+        last_response.status.should == 200
+      end
+
+      it 'should show decision page' do
+        #get '/server', :more => 'params'
+      end
+
+      it 'should redirect back to consumer when user says yes'
+        #post '/server/decide', :yes => 'yes'
+
+      it 'should acknowledge the no'
+        #post '/server/decide', :no => 'no'
+
       it 'should redirect the user to the login page with a return url (TODO: fill in)'
     end
   end
