@@ -113,7 +113,14 @@ END_XRDS
   end
 
   def server
-    @server ||= OpenID::Server::Server.new(OpenID::Store::Filesystem.new(File.expand_path(__FILE__ + '/../db/provider')), url_for('/server', :full))
+    @server ||= create_server
+  end
+
+  def create_server
+    data_path = File.expand_path(__FILE__ + '/../db/provider')
+    store = OpenID::Store::Filesystem.new(data_path)
+    server_root = url_for('/server', :full)
+    OpenID::Server::Server.new(store, server_root)
   end
 
   def authorized?(identity_url, trust_root)
