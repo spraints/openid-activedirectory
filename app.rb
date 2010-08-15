@@ -79,7 +79,12 @@ helpers do
   end
 
   def user_url user
-    url_for("/user/#{user.domain}/#{user.user}", :full)
+    case user
+    when ActiveDirectoryUser
+      url_for("/user/#{user.domain}/#{user.user}", :full)
+    else
+      nil
+    end
   end
 
   def xrds_url user
@@ -189,27 +194,15 @@ end
 helpers do
   def be_server
 
-  @openid_request = server.decode_request(params)
-  unless @openid_request
+  @openid_request = server.decode_request(params) or
     return redirect '/'
-  end
   if @openid_request.kind_of?(OpenID::Server::CheckIDRequest)
-    identity = @openid_request.identity
-    if @openid_request.id_select
-      if @openid_request.immediate
-        @openid_response = @openid_request.answer(false)
-      elsif logged_in?
-        identity = my_url
-      else
-        return haml :decision
-      end
-    end
-    if @openid_response
-      nil
-    elsif authorized?(identity, @openid_request.trust_root)
-      @openid_response = @openid_request.answer true, nil, identity
-      add_sreg @openid_request, openid_response
-      add_pape @openid_request, openid_response
+    if @openid_request.id_select || @openid_request.identity != my_url
+      return haml :login_required
+    elsif authorized?(@openid_request.identity, @openid_request.trust_root)
+      @openid_response = @openid_request.answer true, nil, @openid_request.identity
+      add_sreg @openid_request, @openid_response
+      add_pape @openid_request, @openid_response
     elsif @openid_request.immediate
       @openid_response = @openid_request.answer false, url_for('/server', :full)
     else
@@ -225,14 +218,12 @@ end
 
 post '/server/decide' do
   @openid_request = server.decode_request(params)
+  if @openid_request.id_select
+    return haml :login_required
+  end
   params[:decision] == 'trust' or
     return redirect @openid_request.cancel_url
-  id_to_send = params[:id_to_send]
   identity = @openid_request.identity
-  if @openid_request.id_select
-    content_type :text
-    return 'No, really, you are stuck. I am not going to authorize this request. Use your real account page.'
-  end
   approve @openid_request.trust_root
   @openid_response = @openid_request.answer true, nil, identity
   add_sreg @openid_request, @openid_response

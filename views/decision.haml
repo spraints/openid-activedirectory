@@ -8,13 +8,9 @@
     Site:
     &= @openid_request.trust_root
 
-  - if @openid_request.id_select
-    %p
-      You didn't supply an identity at the request end, so you're stuck.
-  - else
-    %p
-      Identity:
-      &= @openid_request.identity
+  %p
+    Identity:
+    &= @openid_request.identity
 
   %input{:type => 'submit', :name => 'decision', :value => 'trust'}
   %input{:type => 'submit', :name => 'decision', :value => 'revoke' }
