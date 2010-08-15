@@ -201,7 +201,6 @@ helpers do
       elsif logged_in?
         identity = my_url
       else
-        session[:req] = @openid_request
         return haml :decision
       end
     end
@@ -214,7 +213,6 @@ helpers do
     elsif @openid_request.immediate
       @openid_response = @openid_request.answer false, url_for('/server', :full)
     else
-      session[:req] = @openid_request
       return haml :decision
     end
   else
@@ -226,8 +224,8 @@ helpers do
 end
 
 post '/server/decide' do
-  @openid_request = session.delete :req
-  params[:yes] or
+  @openid_request = server.decode_request(params)
+  params[:decision] == 'trust' or
     return redirect @openid_request.cancel_url
   id_to_send = params[:id_to_send]
   identity = @openid_request.identity

@@ -1,4 +1,6 @@
 %form{:action => '/server/decide', :method => 'post'}
+  -params.each do |name, value|
+    %input{:name => name, :value => value, :type => 'hidden'}
   %p
     Do you want to trust this site?
 
@@ -14,5 +16,5 @@
       Identity:
       &= @openid_request.identity
 
-  %input{:type => 'submit', :name => 'yes', :value => 'yes'}
-  %input{:type => 'submit', :name => 'no',  :value => 'no' }
+  %input{:type => 'submit', :name => 'decision', :value => 'trust'}
+  %input{:type => 'submit', :name => 'decision', :value => 'revoke' }
