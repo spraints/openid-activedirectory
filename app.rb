@@ -155,12 +155,6 @@ END_XRDS
     end
   end
 
-  def add_sreg request, response
-    sregreq = OpenID::SReg::Request.from_openid_request request
-    return if sregreq.nil?
-    raise 'TODO -- show real user info'
-  end
-
   def add_pape request, response
     papereq = OpenID::PAPE::Request.from_openid_request request
     return if papereq.nil?
@@ -206,10 +200,11 @@ helpers do
 
   @openid_request = server.decode_request(params) or
     return redirect '/'
+  @sreg_request = OpenID::SReg::Request.from_openid_request @openid_request
   if @openid_request.kind_of?(OpenID::Server::CheckIDRequest)
     if @openid_request.id_select || @openid_request.identity != my_url
       return haml :login_required
-    elsif authorized?(@openid_request.identity, @openid_request.trust_root)
+    elsif !@sreg_request && authorized?(@openid_request.identity, @openid_request.trust_root)
       @openid_response = @openid_request.answer true, nil, @openid_request.identity
       add_sreg @openid_request, @openid_response
       add_pape @openid_request, @openid_response
@@ -226,17 +221,38 @@ helpers do
   end
 end
 
+def decode_decision params
+  decision = Object.new
+  def decision.params= x
+    @params = x
+  end
+  def decision.trust?
+    @params[:decision] == 'trust'
+  end
+  decision.params = params
+  decision
+end
+
 post '/server/decide' do
+  decision = decode_decision params
   @openid_request = server.decode_request(params)
+  @sreg_request   = OpenID::SReg::Request.from_openid_request @openid_request
   if @openid_request.id_select
     return haml :login_required
   end
-  params[:decision] == 'trust' or
+  unless decision.trust?
     return redirect @openid_request.cancel_url
+  end
   identity = @openid_request.identity
   approve @openid_request.trust_root
   @openid_response = @openid_request.answer true, nil, identity
-  add_sreg @openid_request, @openid_response
+  if @sreg_request # 'trust' implies sreg is OK. See views/decision.haml
+    sreg_response = OpenID::SReg::Response.extract_response @sreg_request,
+      'nickname' => current_user.fq_user,
+      'fullname' => 'Test Full Name',
+      'email'    => 'test@example.org'
+    @openid_response.add_extension sreg_response
+  end
   add_pape @openid_request, @openid_response
   render_openid_response
 end

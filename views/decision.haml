@@ -12,5 +12,23 @@
     Identity:
     &= @openid_request.identity
 
+  -if @sreg_request
+    %p
+      The site has also requested the following information:
+      %ul
+        %li
+          %b Required fields
+        %ul
+          -@sreg_request.required.each do |field_name|
+            %li
+              &= field_name
+        %li
+          %b Optional fields
+        %ul
+          -@sreg_request.optional.each do |field_name|
+            %li
+              &= field_name
+      If you do not want to release this information, choose 'revoke'.
+
   %input{:type => 'submit', :name => 'decision', :value => 'trust'}
   %input{:type => 'submit', :name => 'decision', :value => 'revoke' }
