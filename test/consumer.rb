@@ -156,7 +156,7 @@ class SimpleServlet < HTTPServlet::AbstractServlet
       did_sreg = @req.query.fetch('did_sreg', false)
       if did_sreg
         message << " Simple registration data were requested"
-        sreg_resp = OpenID::SRegResponse.from_success_response(response)
+        sreg_resp = OpenID::SReg::Response.from_success_response(response)
         if sreg_resp.empty?
           message << ", but no data were sent."
         else
