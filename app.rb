@@ -15,24 +15,27 @@ configure do
 end
 
 class ActiveDirectoryUser
-  attr_reader :domain, :user
-  def initialize(*name)
-    case name.size
-    when 1
-      @domain, @user = name.first.split('\\')
-    when 2
-      @domain, @user = name
-    else
-      raise "Invalid name spec: #{name.inspect}"
-    end
+  attr_reader :domain, :username
+  def initialize(windows_identity)
+    @domain, @username = windows_identity.name.split('\\')
+  end
+  def fq_user
+    "#{@domain}\\#{@username}"
   end
   def to_s
-    "#{@domain}\\#{@user}"
+    fq_user
   end
   def ==(other)
-    other.domain == self.domain && other.user == self.user
+    other.domain == self.domain && other.username == self.username
   rescue
     false
+  end
+end
+
+class FakeActiveDirectoryUser < ActiveDirectoryUser
+  def initialize(domain, username)
+    @domain      = domain
+    @username    = username
   end
 end
 
@@ -60,7 +63,7 @@ helpers do
 
   def current_user_from_aspnet
     httpContextClass = System::AppDomain.current_domain.get_assemblies.select { |a| a.full_name =~ /^System.Web,/ }.first.get_type('System.Web.HttpContext').to_class
-    ActiveDirectoryUser.new httpContextClass.current.user.identity.name
+    ActiveDirectoryUser.new httpContextClass.current.user.identity
   rescue => e
     @error = e
     nil
@@ -71,7 +74,7 @@ helpers do
       development?                   &&
       (domain   = params[:domain]  ) &&
       (username = params[:username])
-    ActiveDirectoryUser.new domain, username
+    FakeActiveDirectoryUser.new domain, username
   end
 
   def my_url
@@ -81,7 +84,7 @@ helpers do
   def user_url user
     case user
     when ActiveDirectoryUser
-      url_for("/user/#{user.domain}/#{user.user}", :full)
+      url_for("/user/#{user.domain}/#{user.username}", :full)
     else
       nil
     end
@@ -181,7 +184,7 @@ get '/login' do
 end
 
 get '/user/:domain/:username' do
-  @requested_user = ActiveDirectoryUser.new params[:domain], params[:username]
+  @requested_user = FakeActiveDirectoryUser.new params[:domain], params[:username]
   if request.accept.include? 'application/xrds+xml'
     content_type 'application/xrds+xml'
     user_xrds @requested_user
