@@ -21,13 +21,17 @@
         %ul
           -@sreg_request.required.each do |field_name|
             %li
-              &= field_name
+              - field_id = "openid.#{field_name}"
+              %label{:for => field_id}&= field_name
+              %input{:type => :text, :id => field_id, :name => field_id, :value => @default_sreg_values[field_name]}
         %li
           %b Optional fields
         %ul
           -@sreg_request.optional.each do |field_name|
             %li
-              &= field_name
+              - field_id = "openid.#{field_name}"
+              %label{:for => field_id}&= field_name
+              %input{:type => :text, :id => field_id, :name => field_id}
       If you do not want to release this information, choose 'revoke'.
 
   %input{:type => 'submit', :name => 'decision', :value => 'trust'}

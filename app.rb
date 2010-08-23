@@ -211,6 +211,9 @@ helpers do
     elsif @openid_request.immediate
       @openid_response = @openid_request.answer false, url_for('/server', :full)
     else
+      @default_sreg_values = {
+        'nickname' => current_user.to_s
+      }
       return haml :decision
     end
   else
@@ -247,10 +250,10 @@ post '/server/decide' do
   approve @openid_request.trust_root
   @openid_response = @openid_request.answer true, nil, identity
   if @sreg_request # 'trust' implies sreg is OK. See views/decision.haml
-    sreg_response = OpenID::SReg::Response.extract_response @sreg_request,
-      'nickname' => current_user.fq_user,
-      'fullname' => 'Test Full Name',
-      'email'    => 'test@example.org'
+    sreg_values = params.keys.
+      select { |k| k.to_s =~ /openid./ && !params[k].nil? && !params[k].empty? }.
+      inject({}) { |h,k| h.merge(k.to_s.sub(/^openid./,'') => params[k]) }
+    sreg_response = OpenID::SReg::Response.extract_response @sreg_request, sreg_values
     @openid_response.add_extension sreg_response
   end
   add_pape @openid_request, @openid_response
