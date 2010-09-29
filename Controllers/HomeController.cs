@@ -18,8 +18,22 @@ namespace ad_openid_aspnetmvc.Controllers
         public ActionResult Show(string domain, string username)
         {
             ViewData["Domain"] = domain;
-            ViewData["User"] = username;
-            return View("Index");
+            ViewData["Username"] = username;
+            if (Request.AcceptTypes.Contains("application/xrds+xml"))
+                return UserXrds(domain, username);
+            if (User.Identity.Name == ToFullUsername(domain, username))
+                return View("Me");
+            return View("NotMe");
+        }
+
+        private ActionResult UserXrds(string domain, string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        private string ToFullUsername(string domain, string username)
+        {
+            return String.Join("\\", domain, username);
         }
     }
 }
