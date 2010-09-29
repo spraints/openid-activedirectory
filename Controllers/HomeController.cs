@@ -21,10 +21,5 @@ namespace ad_openid_aspnetmvc.Controllers
             ViewData["User"] = username;
             return View("Index");
         }
-
-        public ActionResult About()
-        {
-            return View();
-        }
     }
 }
