@@ -11,9 +11,15 @@ namespace ad_openid_aspnetmvc.Controllers
     {
         public ActionResult Index()
         {
-            ViewData["Message"] = "Welcome to ASP.NET MVC!";
+            var name = User.Identity.Name.Split('\\');
+            return Redirect(Url.RouteUrl("User", new { domain = name[0], username = name[1]}));
+        }
 
-            return View();
+        public ActionResult Show(string domain, string username)
+        {
+            ViewData["Domain"] = domain;
+            ViewData["User"] = username;
+            return View("Index");
         }
 
         public ActionResult About()

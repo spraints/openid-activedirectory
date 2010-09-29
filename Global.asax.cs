@@ -16,12 +16,8 @@ namespace ad_openid_aspnetmvc
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
-            routes.MapRoute(
-                "Default", // Route name
-                "{controller}/{action}/{id}", // URL with parameters
-                new { controller = "Home", action = "Index", id = UrlParameter.Optional } // Parameter defaults
-            );
-
+            routes.MapRoute("Home", "", new { controller = "Home", action = "Index" });
+            routes.MapRoute("User", "user/{domain}/{username}", new { controller = "Home", action = "Show" });
         }
 
         protected void Application_Start()
