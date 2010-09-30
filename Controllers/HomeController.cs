@@ -5,6 +5,8 @@ using System.Web;
 using System.Web.Mvc;
 using System.Security.Principal;
 using System.Web.Routing;
+using DotNetOpenAuth.Messaging;
+using DotNetOpenAuth.OpenId.Provider;
 
 namespace ad_openid_aspnetmvc.Controllers
 {
@@ -77,7 +79,7 @@ namespace ad_openid_aspnetmvc.Controllers
 
         private string CurrentUserUrl
         {
-            get { return Url.RouteUrl("User", CurrentUser.ToRouteValues()); }
+            get { return Url.RouteUrl("User", CurrentUser.ToRouteValues(), Request.Url.Scheme); }
         }
 
         public ActionResult Login()
@@ -99,28 +101,68 @@ namespace ad_openid_aspnetmvc.Controllers
         public ActionResult Show(string domain, string username)
         {
             ViewData["RequestedUser"] = new AdOpenIdIdentity { Domain = domain, Username = username };
+            ViewData["ServerUrl"] = Url.RouteUrl("Server", null, Request.Url.Scheme, Request.Url.Host);
             if (Request.AcceptTypes.Contains(ContentTypes.Xrds))
-                return UserXrds();
+                return View("Xrds");
             if (ViewData["RequestedUser"].Equals(CurrentUser))
                 return View("Me");
             return View("NotMe");
         }
 
-        private ActionResult UserXrds()
+        internal static OpenIdProvider OpenIdProvider = new OpenIdProvider();
+
+        internal static IAuthenticationRequest PendingRequest
         {
-            return new ContentResult
+            get { return ProviderEndpoint.PendingAuthenticationRequest; }
+            set { ProviderEndpoint.PendingAuthenticationRequest = value; }
+        }
+
+        [ValidateInput(false)]
+        public ActionResult Server()
+        {
+            var request = OpenIdProvider.GetRequest();
+            if (request != null)
             {
-                ContentType = ContentTypes.Xrds,
-                Content = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<xrds:XRDS xmlns:xrds=""xri://$xrds"" xmlns=""xri://$xrd*($v*2.0)"">
-  <XRD>
-    <Service priority=""0"">
-      <!-- Types -->
-      <URI>" + Url.RouteUrl("Server", null, Request.Url.Scheme, Request.Url.Host) + @"</URI>
-    </Service>
-  </XRD>
-</xrds:XRDS>"
-            };
+                var authRequest = request as IAuthenticationRequest;
+                if (authRequest != null)
+                {
+                    // Not sure how useful this is, until I start doing sreg. Even then, it'd be nice to keep it out of the session.
+                    PendingRequest = authRequest;
+
+                    // Make sure the user is logged in
+                    if (CurrentUser == null)
+                        return View("LoginRequired");
+
+                    // Make sure the user is the right user.
+                    if (authRequest.IsDirectedIdentity)
+                        authRequest.LocalIdentifier = CurrentUserUrl;
+                    else if (CurrentUserUrl != authRequest.LocalIdentifier)
+                        return View("LoginRequired");
+
+                    // Not sure what this does, but the sample does it so It Must Be Important (tm)
+                    if (!authRequest.IsDelegatedIdentifier)
+                        authRequest.ClaimedIdentifier = authRequest.LocalIdentifier;
+
+                    // My ruby version did this instead:
+                    // return View("Decision");
+                    // Then in the Decide action, it lets the user pick.
+                    authRequest.IsAuthenticated = true;
+
+                    return OpenIdProvider.PrepareResponse(authRequest).AsActionResult();
+                }
+                if (request.IsResponseReady)
+                {
+                    return OpenIdProvider.PrepareResponse(request).AsActionResult();
+                }
+                else
+                {
+                    return View("LoginRequired");
+                }
+            }
+            else
+            {
+                return View();
+            }
         }
 
         class ContentTypes
