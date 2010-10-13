@@ -20,6 +20,7 @@ namespace ad_openid_aspnetmvc
             routes.MapRoute("User", "user/{domain}/{username}", new { controller = "Home", action = "Show" });
             routes.MapRoute("Login", "login", new { controller = "Home", action = "Login" });
             routes.MapRoute("Server", "server", new { controller = "Home", action = "Server" });
+            routes.MapRoute("Decide", "decide", new { controller = "Home", action = "Decide" });
         }
 
         protected void Application_Start()

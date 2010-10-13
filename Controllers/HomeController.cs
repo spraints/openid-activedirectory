@@ -1,15 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
 using System.Security.Principal;
-using System.Web.Routing;
+using System.Web.Mvc;
 using DotNetOpenAuth.Messaging;
+using DotNetOpenAuth.OpenId.Extensions.SimpleRegistration;
 using DotNetOpenAuth.OpenId.Provider;
+
+namespace ad_openid_aspnetmvc.Helpers
+{
+    public static partial class Ext
+    {
+        public static MvcHtmlString OpenIdSregField<T>(this HtmlHelper<T> html, ClaimsRequest request, string field)
+        {
+            if (request == null)
+                throw new ArgumentNullException("request");
+            var t = typeof(ClaimsRequest);
+            var p = t.GetProperty(field);
+            if (p == null)
+                throw new ArgumentOutOfRangeException("field", field, "Not a property on ClaimsRequest");
+            var demandLevel = (DemandLevel) p.GetValue(request, null);
+            if(demandLevel == DemandLevel.NoRequest)
+                return MvcHtmlString.Empty;
+            var id = "sreg." + field;
+            return MvcHtmlString.Create("<div>" +
+                "<label for=\"" + id + "\">" + field + (demandLevel == DemandLevel.Require ? " (required)" : "") + "</label>" +
+                "<input type=\"text\" id=\"" + id + "\" name=\"" + id + "\" />" +
+                "</div>");
+        }
+    }
+}
 
 namespace ad_openid_aspnetmvc.Controllers
 {
+    public class DecisionViewModel
+    {
+        public IAuthenticationRequest OpenIdRequest { get; set; }
+        public ClaimsRequest SregRequest { get; set; }
+    }
+
     [HandleError]
     public class HomeController : Controller
     {
@@ -117,6 +145,39 @@ namespace ad_openid_aspnetmvc.Controllers
             set { ProviderEndpoint.PendingAuthenticationRequest = value; }
         }
 
+        public ActionResult Decide()
+        {
+            if (PendingRequest != null)
+            {
+                PendingRequest.IsAuthenticated = !String.IsNullOrEmpty(Request.Params["trust"]);
+                var sreg = PendingRequest.GetExtension(typeof(ClaimsRequest)) as ClaimsRequest;
+                if (sreg != null)
+                {
+                    var response = sreg.CreateResponse();
+                    Set("sreg.BirthDate", x => response.BirthDateRaw = x);
+                    Set("sreg.Country", x => response.Country = x);
+                    Set("sreg.Email", x => response.Email = x);
+                    Set("sreg.FullName", x => response.FullName = x);
+                    Set("sreg.Gender", x => response.Gender = (x.ToLowerInvariant().StartsWith("m") ? Gender.Male : Gender.Female));
+                    Set("sreg.Language", x => response.Language = x);
+                    Set("sreg.Nickname", x => response.Nickname = x);
+                    Set("sreg.PostalCode", x => response.PostalCode = x);
+                    Set("sreg.TimeZone", x => response.TimeZone = x);
+                    PendingRequest.AddResponseExtension(response);
+
+                }
+                return OpenIdProvider.PrepareResponse(PendingRequest).AsActionResult();
+            }
+            return Redirect(Url.RouteUrl("Home"));
+        }
+
+        private void Set(string paramName, Action<string> action)
+        {
+            foreach (var value in Request.Params.GetValues(paramName) ?? new string[0])
+                if(!String.IsNullOrEmpty(value))
+                    action(value);
+        }
+
         [ValidateInput(false)]
         public ActionResult Server()
         {
@@ -144,11 +205,7 @@ namespace ad_openid_aspnetmvc.Controllers
                         authRequest.ClaimedIdentifier = authRequest.LocalIdentifier;
 
                     // My ruby version did this instead:
-                    // return View("Decision");
-                    // Then in the Decide action, it lets the user pick.
-                    authRequest.IsAuthenticated = true;
-
-                    return OpenIdProvider.PrepareResponse(authRequest).AsActionResult();
+                    return View("Decision", new DecisionViewModel { OpenIdRequest = authRequest, SregRequest = authRequest.GetExtension(typeof(ClaimsRequest)) as ClaimsRequest });
                 }
                 if (request.IsResponseReady)
                 {

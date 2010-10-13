@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
+    <Content Include="Views\Home\Decision.aspx" />
     <Content Include="Views\Home\LoginRequired.aspx" />
     <Content Include="Views\Home\NotMe.aspx" />
     <Content Include="Views\Home\Xrds.aspx" />
